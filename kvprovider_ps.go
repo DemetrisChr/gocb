@@ -846,6 +846,10 @@ func (p *kvProviderPs) GetAllReplicas(c *Collection, id string, opts *GetAllRepl
 	opm := newKvOpManagerPs(c, "get_all_replicas", opts.ParentSpan, p)
 	defer opm.Finish()
 
+	if opts.ReadPreference > ReadPreferenceNone {
+		return nil, wrapError(ErrFeatureNotAvailable, "The couchbase2 protocol does not support ReadPreference")
+	}
+
 	opm.SetDocumentID(id)
 	opm.SetTimeout(opts.Timeout)
 	opm.SetRetryStrategy(opts.RetryStrategy)
@@ -884,6 +888,10 @@ func (p *kvProviderPs) GetAnyReplica(c *Collection, id string, opts *GetAnyRepli
 	opm := newKvOpManagerPs(c, "get_any_replica", opts.ParentSpan, p)
 	defer opm.Finish()
 
+	if opts.ReadPreference > ReadPreferenceNone {
+		return nil, wrapError(ErrFeatureNotAvailable, "The couchbase2 protocol does not support ReadPreference")
+	}
+
 	res, err := p.GetAllReplicas(c, id, &GetAllReplicaOptions{
 		Transcoder:    opts.Transcoder,
 		Timeout:       opts.Timeout,
@@ -902,6 +910,10 @@ func (p *kvProviderPs) GetAnyReplica(c *Collection, id string, opts *GetAnyRepli
 	}
 
 	return recv, nil
+}
+
+func (p *kvProviderPs) GetReplica(c *Collection, id string, strategy GetReplicaStrategy, opts *GetReplicaOptions) (*GetReplicaResult, error) {
+	return nil, ErrFeatureNotAvailable
 }
 
 func (p *kvProviderPs) Prepend(c *Collection, id string, val []byte, opts *PrependOptions) (*MutationResult, error) {
@@ -1015,6 +1027,11 @@ func (p *kvProviderPs) Increment(c *Collection, id string, opts *IncrementOption
 		expiry = &kv_v1.IncrementRequest_ExpirySecs{ExpirySecs: uint32(opts.Expiry.Seconds())}
 	}
 
+	var initial *int64
+	if opts.Initial >= 0 { // Negative Initial denotes the absence of an initial value
+		initial = &opts.Initial
+	}
+
 	request := &kv_v1.IncrementRequest{
 		BucketName:      opm.BucketName(),
 		ScopeName:       opm.ScopeName(),
@@ -1022,7 +1039,7 @@ func (p *kvProviderPs) Increment(c *Collection, id string, opts *IncrementOption
 		Key:             opm.DocumentID(),
 		Delta:           opts.Delta,
 		Expiry:          expiry,
-		Initial:         &opts.Initial,
+		Initial:         initial,
 		DurabilityLevel: opm.DurabilityLevel(),
 	}
 
@@ -1058,6 +1075,11 @@ func (p *kvProviderPs) Decrement(c *Collection, id string, opts *DecrementOption
 		expiry = &kv_v1.DecrementRequest_ExpirySecs{ExpirySecs: uint32(opts.Expiry.Seconds())}
 	}
 
+	var initial *int64
+	if opts.Initial >= 0 { // Negative Initial denotes the absence of an initial value
+		initial = &opts.Initial
+	}
+
 	request := &kv_v1.DecrementRequest{
 		BucketName:      opm.BucketName(),
 		ScopeName:       opm.ScopeName(),
@@ -1065,7 +1087,7 @@ func (p *kvProviderPs) Decrement(c *Collection, id string, opts *DecrementOption
 		Key:             opm.DocumentID(),
 		Delta:           opts.Delta,
 		Expiry:          expiry,
-		Initial:         &opts.Initial,
+		Initial:         initial,
 		DurabilityLevel: opm.DurabilityLevel(),
 	}
 

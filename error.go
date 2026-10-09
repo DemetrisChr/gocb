@@ -228,6 +228,10 @@ var (
 	// ErrDocumentNotLocked occurs when unlock is called on a document that is not locked.
 	// # UNCOMMITTED: This API may change in the future.
 	ErrDocumentNotLocked = gocbcore.ErrDocumentNotLocked
+
+	ErrReplicaIndexOutOfBounds          = gocbcore.ErrInvalidReplica
+	ErrReplicaIndexCurrentlyUnavailable = gocbcore.ErrReplicaCurrentlyUnavailable
+	ErrDocumentNotFoundOnReplica        = wrapError(ErrDocumentNotFound, "document not found on replica")
 )
 
 // Query Error Definitions RFC#58@15
@@ -343,4 +347,9 @@ var (
 	ErrDocumentTooDeep = errors.New("document too deep")
 
 	ErrShutdown = errors.New("cluster closed")
+
+	// ErrAuthorizationFailure occurs when the user does not have permission to access or modify the resource that an
+	// operation was performed against.
+	// This error occurs when couchbase2 scheme is in use, other schemes report ErrAuthenticationFailure instead.
+	ErrAuthorizationFailure = errors.New("authorization failure")
 )
